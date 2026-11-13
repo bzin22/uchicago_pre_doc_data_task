@@ -1,4 +1,4 @@
-# [2023] Pre-doc Data Task
+# [2023 version] Pre-doc Data Task
 # Source: https://uchicago.app.box.com/s/0lrni05mpgsvtgnzafp81kmnghoff8ya
 # Author: Bryan Zin
 # Date: Nov 2026
@@ -90,3 +90,60 @@ df_types <- df_types %>%
 # Yes, there are 4 empty strings in the resource type columns.
 # Their corresponding resource names are GALLOWAY_SOLAR1, ROSELAND_SOLAR3, SSPURTWO_WIND_1, and SWEETWN2_WND24.
 # I would predict their missing values are PVGR, PVGR, WIND, and WIND, respectively.
+
+df_types <- df_types %>%
+  mutate(
+    fuel_type = case_when( # add a category called fuel types with the following rules below
+      str_detect(resource_type, "DSL") ~ "Other",
+      str_detect(resource_type, "WIND") ~ "Wind",
+      str_detect(resource_type, "SCGT90") ~ "Natural Gas",
+      str_detect(resource_type, "PWRSTR") ~ "Other",
+      str_detect(resource_type, "HYDRO") ~ "Other",
+      str_detect(resource_type, "CCGT90") ~ "Natural Gas",
+      str_detect(resource_type, "PVGR") ~ "Solar",
+      str_detect(resource_type, "SCLE90") ~ "Natural Gas",
+      str_detect(resource_type, "GSREH") ~ "Natural Gas",
+      str_detect(resource_type, "CCLE90") ~ "Natural Gas",
+      str_detect(resource_type, "CLLIG") ~ "Coal",
+      str_detect(resource_type, "GSSUP") ~ "Natural Gas",
+      str_detect(resource_type, "NUC") ~ "Nuclear",
+      str_detect(resource_type, "RENEW") ~ "Other",
+      str_detect(resource_type, "GSNONR") ~ "Natural Gas",
+      .default = resource_type
+    )
+  )
+
+df_types %>% summarize(unique_fuels = n_distinct(fuel_type)) # check that there are 6 distinct fuel types in df_types after the mutation
+
+df_merged <- df_outputs %>%
+  left_join(
+    df_types %>%
+      select(resource_name, resource_type, fuel_type), by = "resource_name"
+  )
+
+df_merged %>% summarize(unique_fuels = n_distinct(fuel_type)) # check that there are 6 distinct fuel types in df_merged now
+
+# Q5: Based on the following definitions, use the resource type column to make a “Fuel Type” column. 
+#     After doing so, merge Fuel Type and Resource Type onto ercot_resource_output.csv using Resource Name (you should end up with 6 unique values of Fuel Type).
+    # • DSL - Other
+    # • SCGT90 - Natural Gas
+    # • WIND - Wind
+    # • PWRSTR - Other
+    # • HYDRO - Other
+    # • CCGT90 - Natural Gas
+    # • PVGR - Solar
+    # • SCLE90 - Natural Gas
+    # • GSREH - Natural Gas
+    # • CCLE90 - Natural Gas
+    # • CLLIG - Coal
+    # • GSSUP - Natural Gas
+    # • NUC - Nuclear
+    # • GSNONR - Natural Gas
+    # • RENEW - Other
+
+# Q6: Plot the following:
+#     (a) output summed by day
+#     (b) output summed by hour-of-day (hours 0-23)
+#     (c) output summed by hour-of-day and by Fuel Type (the variable you defined in 5.)
+#     Discuss the patterns you see in each plot.
+
