@@ -141,9 +141,76 @@ df_merged %>% summarize(unique_fuels = n_distinct(fuel_type)) # check that there
     # • GSNONR - Natural Gas
     # • RENEW - Other
 
+output_by_day <- df_merged %>%
+  mutate(day = as_date(mdy_hm(sced_time_stamp))) %>% # turn string sced_time_stamp to month, day, year, hour, minute
+  group_by(day) %>% # tag each row with a day label
+  summarize(total_output = sum(telemetered_net_output, na.rm = TRUE)) # sum each day's output into a total sum
+
+ggplot(output_by_day, aes(x = day, y = total_output)) + 
+         geom_line() + 
+         labs(
+           title = "Output summed by day",
+           x = "Day",
+           y = "Output per day"
+         ) + 
+         theme_linedraw() +
+         theme(plot.title = element_text(hjust = 0.5)) + # center the title
+         scale_x_date(date_breaks = "1 day", date_labels = "%b %d") + # add breaks by day
+         theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) # rotate x labels by 90 deg
+
+output_by_hour <- df_merged %>%
+  mutate(hr = hour(mdy_hm(sced_time_stamp))) %>%
+  group_by(hr) %>%
+  summarize(total_output = sum(telemetered_net_output, na.rm = TRUE))
+
+ggplot(output_by_hour, aes(x = hr, y = total_output)) + 
+        geom_line() + 
+        labs(
+          title = "Output summed by hour",
+          x = "Hour",
+          y = "Output per hour"
+        ) + 
+        theme_linedraw() +
+        theme(plot.title = element_text(hjust = 0.5)) + # center the title
+        scale_x_continuous(breaks = 0:23) # add breaks by hour
+
+output_by_hour_fuel <- df_merged %>%
+  mutate(hr = hour(mdy_hm(sced_time_stamp))) %>%
+  group_by(hr, fuel_type) %>%
+  summarize(total_output = sum(telemetered_net_output, na.rm = TRUE), .groups = "drop")
+
+ggplot(output_by_hour_fuel, aes(x = hr, y = total_output, color = fuel_type)) + 
+  geom_line() + 
+  labs(
+    title = "Output summed by hour per fuel type",
+    x = "Hour",
+    y = "Output per hour per fuel type"
+  ) + 
+  theme_linedraw() +
+  theme(plot.title = element_text(hjust = 0.5)) + # center the title
+  scale_x_continuous(breaks = 0:23) # add breaks by hour
+
 # Q6: Plot the following:
 #     (a) output summed by day
 #     (b) output summed by hour-of-day (hours 0-23)
 #     (c) output summed by hour-of-day and by Fuel Type (the variable you defined in 5.)
 #     Discuss the patterns you see in each plot.
+# In the first plot, the energy output has local peaks on January 25th, February 11th, and February 17th. There is a global peak on January 31st. 
+# The global minima is on February 6th, and there seems to be a sharp dropoff in early February (around the 3rd). 
+# This could be caused by an ice storm hitting Texas around January 30th, which likely increased demand for energy (to heat people's homes). 
+# It also seems like the local minimas are mostly happening on weekends (Jan 22, 28, 29 and Feb 4, 5, 18, 19), when people are likely out of their homes during the day. 
 
+# In the second plot, the energy output has a global maxima at 8am, and a local maxima at 7pm. 
+# The lowest energy output seems to be at around 2am, and a local minima can be observed around 3pm. 
+# This seems to be consistent with the demand for energy during the winter months, as people heat their homes to start the day and as they come home in the evenings, hence the two maxima. 
+# During the afternoon, the sun comes out so using less energy then is consistent with the data. 
+
+# In the third plot, the lowest fuel output per hour is in the other category. Solar energy rises around 7am and diminishes around 6pm.
+# Nuclear energy is held constant because they run at full power all the time due to high costs of power output fluctuations. 
+# Energy from coal rises and peaks around around 7am and 6pm. 
+# Afterwards, the energy output diminishes to a local minima around 4pm before quickly rising to another peak at 6pm.
+# Wind energy starts high at midnight and gradually reduces down as the day progresses, down to its global minima at 10am. 
+# From then on, it continues to rise back up before leveling off starting around 6pm until the end of the day. 
+# Natural gas energy rises steadily from the start of the day to 8 am and drops to its global minima by 4pm. 
+# Then it rises asymptotically again to a local maxima at 6pm before dropping back down to a local minima by midnight.  
+# It seems like gas and coal rise when demand peaks and when sunlight is scarce (early mornings and dusk). It seems like in texas, the wind is stronger at night than in the day. 
