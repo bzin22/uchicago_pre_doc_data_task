@@ -1,10 +1,10 @@
 # [2023 version] Pre-doc Data Task
 # Source: https://uchicago.app.box.com/s/0lrni05mpgsvtgnzafp81kmnghoff8ya
 # Author: Bryan Zin
-# Date: Nov 2026
 
 library(readr)
 library(tidyverse)
+library(tseries)
 
 df_types <- read_csv("Data/ercot_resource_types.csv")
 df_outputs <- read_csv("Data/ercot_resource_output.csv")
@@ -214,3 +214,13 @@ ggplot(output_by_hour_fuel, aes(x = hr, y = total_output, color = fuel_type)) +
 # Natural gas energy rises steadily from the start of the day to 8 am and drops to its global minima by 4pm. 
 # Then it rises asymptotically again to a local maxima at 6pm before dropping back down to a local minima by midnight.  
 # It seems like gas and coal rise when demand peaks and when sunlight is scarce (early mornings and dusk). It seems like in texas, the wind is stronger at night than in the day. 
+
+adf.test(output_by_day$total_output) # test for unit root (null = data is stationary)
+kpss.test(output_by_day$total_output) # KPSS test to flip the null hypothesis
+urca::ur.za(output_by_day$total_output, model = "intercept") # Zivot-Andrews test to allow for one break, the Jan 31st storm
+
+# Q7: Looking at the plot from 6.(a), does this data look stationary? 
+#     Using the data summed at the daily level, test for a unit root and interpret the result. 
+#     Now calculate its first difference and plot it. Does it look stationary?
+# The data in Q6 plot A does not seem stationary due to the high peak in the first month. After performing a ADF test, 
+# we discovered a p-value of 0.29. A KPSS test to flip the null hypothesis also confirmed that the p-value is above 0.10. 
